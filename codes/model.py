@@ -1,0 +1,70 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.autograd import Variable
+
+
+class CNN_Text(nn.Module):
+    
+    def __init__(self, args):
+        super(CNN_Text, self).__init__()
+        self.args = args
+        
+        V = args.embed_num
+        D = args.embed_dim
+        C = args.class_num
+        Ci = 1
+        Co = args.kernel_num
+        Ks = args.kernel_sizes
+
+        self.embed = nn.Embedding(V, D)
+        # self.convs1 = [nn.Conv2d(Ci, Co, (K, D)) for K in Ks]
+        self.convs1 = nn.ModuleList([nn.Conv2d(Ci, Co, (K, D)) for K in Ks])
+        self.dropout = nn.Dropout(args.dropout)
+        self.fc1 = nn.Linear(len(Ks)*Co, C)
+
+    # def conv_and_pool(self, x, conv):
+    #     x = F.relu(conv(x)).squeeze(3)  # (N, Co, W)
+    #     x = F.max_pool1d(x, x.size(2)).squeeze(2)
+    #     return x
+
+    
+    def Cosine_simlarity(vec1, vec2):
+        up = 0.0                                                                                                                                                                  
+        down = 0.0
+        down_1 = 0.0
+        down_2 = 0.0
+        for i in range(len(vec1)):
+            up += (vec1[i] * vec2[i])
+        for i in range(len(vec1)):
+            down_1 += (vec1[i] * vec1[i])
+            down_2 += (vec2[i] * vec2[i])
+        down = sqrt(down_1) * sqrt(down_2)
+        return float(up/down)
+
+    def forward(self, q1, q2):
+
+        q1 = self.embed(q1)
+        if self.args.static:
+            q1 = Variable(q1)
+        q1 = q1.unsqueeze(1)  # (N, Ci, W, D)
+        
+        q1 = [F.relu(conv(q1)).squeeze(3) for conv in self.convs1]  # [(N, Co, W), ...]*len(Ks)
+        q1 = [i.size(2) * F.avg_pool1d(i, i.size(2)).squeeze(2) for i in q1]  # [(N, Co), ...]*len(Ks)
+        q1 = torch.cat(q1, 1)
+        q1 = self.dropout(q1)  # (N, len(Ks)*Co)
+        logit_1 = self.fc1(q1)  # (N, C)
+
+        q2 = self.embed(q2)
+        if self.args.static:
+            q2 = Variable(q2)
+        q2 = q2.unsqueeze(1)  # (N, Ci, W, D)
+        q2 = [F.relu(conv(q2)).squeeze(3) for conv in self.convs1]  # [(N, Co, W), ...]*len(Ks)
+        q2 = [i.size(2) * F.avg_pool1d(i, i.size(2)).squeeze(2) for i in q2]  # [(N, Co), ...]*len(Ks)
+        q2 = torch.cat(q2, 1)
+        q2 = self.dropout(q2)  # (N, len(Ks)*Co)
+        logit_2 = self.fc1(q2)  # (N, C)
+        
+        return self.Cosine_simlarity(logit_1, logit_2)
+
+
