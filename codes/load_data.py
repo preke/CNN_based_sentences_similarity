@@ -42,7 +42,7 @@ def load_data(data_path):
                 neg_dup_list.append([r['Issue_id'], df.ix[i+j]['Issue_id'], r['Resolution']])
                 cnt += 1
             except:
-                print traceback.print_exc() 
+                print(traceback.print_exc()) 
             
         if cnt > len(Dup_list):
             break
@@ -51,18 +51,23 @@ def load_data(data_path):
 
     df_pairs_neg['Title_1'] = df_pairs_neg['Issue_id_1'].apply(lambda x: list(df[df['Issue_id'] == x]['Desc_list'])[0])
     df_pairs_neg['Title_2'] = df_pairs_neg['Issue_id_2'].apply(lambda x: list(df[df['Issue_id'] == x]['Desc_list'])[0])
-    df_pairs_neg['label'] = 0
     
     df_pairs_pos['Title_1'] = df_pairs_pos['Issue_id_1'].apply(lambda x: list(df[df['Issue_id'] == x]['Desc_list'])[0])
     df_pairs_pos['Title_2'] = df_pairs_pos['Issue_id_2'].apply(lambda x: list(df[df['Issue_id'] == x]['Desc_list'])[0])
-    df_pairs_pos['label'] = 1
     
-    df_pairs_neg = df_pairs_neg[['Title_1', 'Title_2', 'label']]
-    df_pairs_pos = df_pairs_pos[['Title_1', 'Title_2', 'label']]
+
+    df_pairs_neg['Title_1'].apply(lambda x: str(' '.join(x)))
+    df_pairs_neg['Title_2'].apply(lambda x: str(' '.join(x)))
+    df_pairs_pos['Title_1'].apply(lambda x: str(' '.join(x)))
+    df_pairs_pos['Title_2'].apply(lambda x: str(' '.join(x)))
+
+    df_pairs_neg.to_csv('../datas/neg.csv', index=False)
+    df_pairs_pos.to_csv('../datas/pos.csv', index=False)
     
+    '''
     ratios = [0.6, 0.3, 0.1]
     train_set = pd.concat([df_pairs_neg.iloc[range(int(ratios[0]*len(df_pairs_neg)))],df_pairs_pos.iloc[range(int(ratios[0]*len(df_pairs_pos)))]])
     test_set = pd.concat([df_pairs_neg.iloc[range(int(ratios[0]*len(df_pairs_neg)), int((ratios[1] + ratios[0])*len(df_pairs_neg)))],df_pairs_pos.iloc[range(int(ratios[0]*len(df_pairs_pos)), int((ratios[1] + ratios[0])*len(df_pairs_pos)))]])
     vali_set = pd.concat([df_pairs_neg.iloc[range(int((ratios[1] + ratios[0])*len(df_pairs_neg)), len(df_pairs_neg))],df_pairs_pos.iloc[range(int((ratios[1] + ratios[0])*len(df_pairs_pos)), len(df_pairs_pos))]])
     return train_set, test_set, vali_set
-
+    '''

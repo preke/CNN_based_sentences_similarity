@@ -71,7 +71,8 @@ if __name__ == '__main__':
     args = get_args()    
 
     # load data
-    train_data, dev_data, vali_data = load_data('../datas/spark.csv')
+    load_data('../datas/spark.csv')
+    
     issue1_field.build_vocab(train_data, dev_data)
     issue2_field.build_vocab(train_data, dev_data)
     label_field.build_vocab(train_data, dev_data)
