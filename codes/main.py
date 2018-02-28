@@ -5,6 +5,7 @@ import torch
 import torchtext.data as data
 import torchtext.datasets as datasets
 import argparse
+from load_data import load_data
 
 '''
     BATCH_SIZE=64
@@ -49,7 +50,7 @@ def get_args():
     # model
     parser.add_argument('-dropout', type=float, default=0.5, help='the probability for dropout [default: 0.5]')
     parser.add_argument('-max-norm', type=float, default=3.0, help='l2 constraint of parameters [default: 3.0]')
-    parser.add_argument('-embed-dim', type=int, default=128, help='number of embedding dimension [default: 128]')
+    parser.add_argument('-embed-dim', type=int, default=300, help='number of embedding dimension [default: 128]')
     parser.add_argument('-kernel-num', type=int, default=100, help='number of each kind of kernel')
     parser.add_argument('-kernel-sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
     parser.add_argument('-static', action='store_true', default=False, help='fix the embedding')
@@ -70,44 +71,18 @@ if __name__ == '__main__':
     args = get_args()    
 
     # load data
-
-    # ===
-    # train_set, test_set = load_data('../datas/spark.csv')
-    df = pd.read_csv(open('../data/spark.csv', 'rU'))
-    df['Duplicate_null'] = df['Duplicated_issue'].apply(lambda x : pd.isnull(x))
+    train_data, dev_data, vali_data = load_data('../datas/spark.csv')
+    issue1_field.build_vocab(train_data, dev_data)
+    issue2_field.build_vocab(train_data, dev_data)
+    label_field.build_vocab(train_data, dev_data)
+    train_iter, dev_iter = data.Iterator.splits(
+                                (train_data, dev_data), 
+                                batch_sizes=(args.batch_size, len(dev_data)),
+                                **kargs)
     
-    # Positive samples
-    df_data = df[df['Duplicate_null'] == False]
-    prep = Preprocess()
-    df_data['Desc_list'] = df_data['Title'].apply(lambda x : prep.stem_and_stop_removal(x))
-    df_field = df_data[['Issue_id', 'Desc_list', 'Duplicated_issue', 'Resolution']]
-    df_field['dup_list'] = df_field['Duplicated_issue'].apply(lambda x: x.split(';'))
-    Dup_list = []
-    for i,r in df_field.iterrows():
-        for dup in r['dup_list']:
-            if int(r['Issue_id'].split('-')[1]) < int(dup.split('-')[1]):
-                Dup_list.append([r['Issue_id'], dup, r['Resolution']])
-    df_pairs_pos = pd.DataFrame(Dup_list, columns = ['Issue_id_1', 'Issue_id_2', 'Resolution'])
-
-    # Negative samples
-    neg_dup_list = []
-    cnt = 0
-    for i,r in df.iterrows():
-        if r['Duplicate_null'] == True:
-            neg_dup_list.append([r['Issue_id'], df.ix[i+1]['Issue_id'], r['Resolution']])
-            cnt += 1
-            if cnt > len(Dup_list):
-                break
-
-    df_pairs_neg = pd.DataFrame(neg_dup_list, columns = ['Issue_id_1', 'Issue_id_2', 'Resolution'])    
-
-    # train, validation, test
-    # ===
-
 
     # train or predict
     
-    '''
     if args.predict is not None:
         label = train.predict(args.predict, cnn, text_field, label_field, args.cuda)
         print('\n[Text]  {}\n[Label] {}\n'.format(args.predict, label))
@@ -123,7 +98,7 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             print('\n' + '-' * 89)
             print('Exiting from training early')
-    '''
+    
 
 
     

@@ -11,7 +11,7 @@ from math import log
 
 class Preprocess(object):
     def __init__(self):
-        self.english_punctuations = [',', '.', ':', ';', '?', '(', ')', '[', ']', '&', '!', '*', '@', '#', '$', '%', '\'']  
+        self.english_punctuations = [',', '.', ':', ';', '?', '(', ')', '[', ']', '&', '!', '*', '@', '#', '$', '%', '\'','\"','“', '-']  
         self.stop = set(stopwords.words('english'))
 
     def punctuate(self, text):
@@ -25,7 +25,6 @@ class Preprocess(object):
 
     def stem_and_stop_removal(self, text):
         text = self.punctuate(text)
-        print text
         word_list = word_tokenize(text)
         lancaster_stemmer = LancasterStemmer()
         word_list = [lancaster_stemmer.stem(i) for i in word_list]
