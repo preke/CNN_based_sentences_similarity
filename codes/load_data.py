@@ -22,7 +22,7 @@ def load_data(data_path):
     df_data = df[df['Duplicate_null'] == False]
 
 
-    df_field = df_data[['Issue_id', 'Description', 'Duplicated_issue', 'Resolution']]
+    df_field = df_data[['Issue_id', 'Title', 'Duplicated_issue', 'Resolution']]
     df_field['dup_list'] = df_field['Duplicated_issue'].apply(lambda x: x.split(';'))
     Dup_list = []
     for i,r in df_field.iterrows():
@@ -51,18 +51,20 @@ def load_data(data_path):
 
     df_pairs_neg = pd.DataFrame(neg_dup_list, columns = ['Issue_id_1', 'Issue_id_2', 'Resolution'])
 
-    df_pairs_neg['Title_1'] = df_pairs_neg['Issue_id_1'].apply(lambda x: list(df[df['Issue_id'] == x]['Description'])[0])
-    df_pairs_neg['Title_2'] = df_pairs_neg['Issue_id_2'].apply(lambda x: list(df[df['Issue_id'] == x]['Description'])[0])
+    df_pairs_neg['Title_1'] = df_pairs_neg['Issue_id_1'].apply(lambda x: list(df[df['Issue_id'] == x]['Title'])[0])
+    df_pairs_neg['Title_2'] = df_pairs_neg['Issue_id_2'].apply(lambda x: list(df[df['Issue_id'] == x]['Title'])[0])
     
-    df_pairs_pos['Title_1'] = df_pairs_pos['Issue_id_1'].apply(lambda x: list(df[df['Issue_id'] == x]['Description'])[0])
-    df_pairs_pos['Title_2'] = df_pairs_pos['Issue_id_2'].apply(lambda x: list(df[df['Issue_id'] == x]['Description'])[0])
-    
-
+    df_pairs_pos['Title_1'] = df_pairs_pos['Issue_id_1'].apply(lambda x: list(df[df['Issue_id'] == x]['Title'])[0])
+    df_pairs_pos['Title_2'] = df_pairs_pos['Issue_id_2'].apply(lambda x: list(df[df['Issue_id'] == x]['Title'])[0])
+    df_pairs_pos = df_pairs_pos[['Title_1','Title_2']]  
+    df_pairs_neg = df_pairs_neg[['Title_1','Title_2']]  
+    '''
     df_pairs_neg['Title_1'].apply(lambda x: str(' '.join(x)))
     df_pairs_neg['Title_2'].apply(lambda x: str(' '.join(x)))
     df_pairs_pos['Title_1'].apply(lambda x: str(' '.join(x)))
     df_pairs_pos['Title_2'].apply(lambda x: str(' '.join(x)))
-
+    '''
+    
     df_pairs_neg.to_csv('../datas/neg.csv', index=False)
     df_pairs_pos.to_csv('../datas/pos.csv', index=False)
     
