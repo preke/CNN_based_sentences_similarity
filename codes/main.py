@@ -6,32 +6,12 @@ import torchtext.data as data
 import torchtext.datasets as datasets
 import argparse
 from load_data import load_data
-
-'''
-    BATCH_SIZE=64
-    CLASS_NUM=2
-    CUDA=True
-    DEVICE=-1
-    DROPOUT=0.5
-    EARLY_STOP=1000
-    EMBED_DIM=128
-    EMBED_NUM=21114
-    EPOCHS=256
-    KERNEL_NUM=100
-    KERNEL_SIZES=[3, 4, 5]
-    LOG_INTERVAL=1
-    LR=0.001
-    MAX_NORM=3.0
-    PREDICT=None
-    SAVE_BEST=True
-    SAVE_DIR=snapshot/2018-02-27_10-34-17
-    SAVE_INTERVAL=500
-    SHUFFLE=False
-    SNAPSHOT=None
-    STATIC=False
-    TEST=False
-    TEST_INTERVAL=100
-'''
+import mydatasets
+import os
+import datetime
+import traceback
+import model
+import train
 
 def get_args():
     parser = argparse.ArgumentParser(description='')
@@ -55,7 +35,7 @@ def get_args():
     parser.add_argument('-kernel-sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
     parser.add_argument('-static', action='store_true', default=False, help='fix the embedding')
     # device
-    parser.add_argument('-device', type=int, default=-1, help='device to use for iterate data, -1 mean cpu [default: -1]')
+    parser.add_argument('-device', type=int, default=0, help='device to use for iterate data, -1 mean cpu [default: -1]')
     parser.add_argument('-no-cuda', action='store_true', default=False, help='disable the gpu')
     # option
     parser.add_argument('-snapshot', type=str, default=None, help='filename of model snapshot [default: None]')
@@ -71,17 +51,49 @@ if __name__ == '__main__':
     args = get_args()    
 
     # load data
-    load_data('../datas/spark.csv')
-    
+    # load_data('../datas/spark.csv')
+    print("\nLoading data...")
+    issue1_field = data.Field(lower=True)
+    issue2_field = data.Field(lower=True)
+    label_field = data.Field(sequential=False)
+    train_data, dev_data = mydatasets.MR.splits(issue1_field, issue2_field, label_field)
     issue1_field.build_vocab(train_data, dev_data)
     issue2_field.build_vocab(train_data, dev_data)
     label_field.build_vocab(train_data, dev_data)
     train_iter, dev_iter = data.Iterator.splits(
                                 (train_data, dev_data), 
-                                batch_sizes=(args.batch_size, len(dev_data)),
-                                **kargs)
+                                batch_sizes=(args.batch_size, len(dev_data)))
     
 
+    args.embed_num = len(issue1_field.vocab) + len(issue2_field.vocab)
+    args.class_num = len(label_field.vocab) - 1
+    args.cuda = (not args.no_cuda) and torch.cuda.is_available(); del args.no_cuda
+    args.kernel_sizes = [int(k) for k in args.kernel_sizes.split(',')]
+    args.save_dir = os.path.join(args.save_dir, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+
+    print("\nParameters:")
+    for attr, value in sorted(args.__dict__.items()):
+        print("\t{}={}".format(attr.upper(), value))
+
+
+    # model
+    cnn = model.CNN_Text(args)
+    if args.snapshot is not None:
+        print('\nLoading model from {}...'.format(args.snapshot))
+        cnn.load_state_dict(torch.load(args.snapshot))
+
+    if args.cuda:
+        torch.cuda.set_device(args.device)
+        cnn = cnn.cuda()
+
+    try:
+        train.train(train_iter, dev_iter, cnn, args)
+    except KeyboardInterrupt:
+        print(traceback.print_exc())
+        print('\n' + '-' * 89)
+        print('Exiting from training early')
+    
+    '''
     # train or predict
     
     if args.predict is not None:
@@ -100,7 +112,7 @@ if __name__ == '__main__':
             print('\n' + '-' * 89)
             print('Exiting from training early')
     
-
+    '''
 
     
     

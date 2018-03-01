@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-
+from math import sqrt
 
 class CNN_Text(nn.Module):
     
@@ -29,7 +29,7 @@ class CNN_Text(nn.Module):
     #     return x
 
     
-    def Cosine_simlarity(vec1, vec2):
+    def Cosine_simlarity(self, vec1, vec2):
         up = 0.0                                                                                                                                                                  
         down = 0.0
         down_1 = 0.0
@@ -49,11 +49,15 @@ class CNN_Text(nn.Module):
             q1 = Variable(q1)
         q1 = q1.unsqueeze(1)  # (N, Ci, W, D)
         
+        # step1
         q1 = [F.relu(conv(q1)).squeeze(3) for conv in self.convs1]  # [(N, Co, W), ...]*len(Ks)
+        # step2
         q1 = [i.size(2) * F.avg_pool1d(i, i.size(2)).squeeze(2) for i in q1]  # [(N, Co), ...]*len(Ks)
-        q1 = torch.cat(q1, 1)
-        q1 = self.dropout(q1)  # (N, len(Ks)*Co)
-        logit_1 = self.fc1(q1)  # (N, C)
+        q1 = [F.tanh(i) for i in q1]
+        q1 = torch.cat(q1, 1) # 64 * 300
+        
+        # q1 = self.dropout(q1)  # (N, len(Ks)*Co)
+        # logit_1 = self.fc1(q1)  # (N, C)
 
         q2 = self.embed(q2)
         if self.args.static:
@@ -62,9 +66,12 @@ class CNN_Text(nn.Module):
         q2 = [F.relu(conv(q2)).squeeze(3) for conv in self.convs1]  # [(N, Co, W), ...]*len(Ks)
         q2 = [i.size(2) * F.avg_pool1d(i, i.size(2)).squeeze(2) for i in q2]  # [(N, Co), ...]*len(Ks)
         q2 = torch.cat(q2, 1)
-        q2 = self.dropout(q2)  # (N, len(Ks)*Co)
-        logit_2 = self.fc1(q2)  # (N, C)
-        
-        return self.Cosine_simlarity(logit_1, logit_2)
-
+        # q2 = self.dropout(q2)  # (N, len(Ks)*Co)
+        # logit_2 = self.fc1(q2)  # (N, C)
+        cos_ans = []
+        length = len(q1.data)
+        for i in range(length):
+           cos_ans.append(self.Cosine_simlarity(q1.data[i], q2.data[i]))
+        # print(cos_ans)
+        return Variable(torch.cuda.FloatTensor(cos_ans), requires_grad = True)
 

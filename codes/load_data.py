@@ -65,8 +65,8 @@ def load_data(data_path):
     df_pairs_pos['Title_2'].apply(lambda x: str(' '.join(x)))
     '''
     
-    df_pairs_neg.to_csv('../datas/neg.csv', index=False)
-    df_pairs_pos.to_csv('../datas/pos.csv', index=False)
+    df_pairs_neg.to_csv('../datas/neg.csv', index=False, header=False)
+    df_pairs_pos.to_csv('../datas/pos.csv', index=False, header=False)
     
     '''
     ratios = [0.6, 0.3, 0.1]

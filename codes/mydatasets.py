@@ -40,7 +40,7 @@ class MR(TarDataset):
     def sort_key(ex):
         return len(ex.text)
 
-    def __init__(self, text_field, label_field, path=None, examples=None, **kwargs):
+    def __init__(self, issue1_field, issue2_field, label_field, path=None, examples=None, **kwargs):
         """Create an MR dataset instance given a path and fields.
 
         Arguments:
@@ -63,7 +63,7 @@ class MR(TarDataset):
             string = re.sub(r"\'re", " \'re", string)
             string = re.sub(r"\'d", " \'d", string)
             string = re.sub(r"\'ll", " \'ll", string)
-            string = re.sub(r",", " , ", string)
+            # string = re.sub(r",", " , ", string)
             string = re.sub(r"!", " ! ", string)
             string = re.sub(r"\(", " \( ", string)
             string = re.sub(r"\)", " \) ", string)
@@ -71,24 +71,24 @@ class MR(TarDataset):
             string = re.sub(r"\s{2,}", " ", string)
             return string.strip()
 
-        text_field.preprocessing = data.Pipeline(clean_str)
+        issue1_field.preprocessing = data.Pipeline(clean_str)
+        issue2_field.preprocessing = data.Pipeline(clean_str)
         fields = [('issue1', issue1_field), ('issue2', issue2_field), ('label', label_field)]
 
         if examples is None:
-            path = self.dirname if path is None else path
+            path = '../datas/'
             examples = []
-            with open(os.path.join(path, 'rt-polarity.neg'), errors='ignore') as f:
+            with open(os.path.join(path, 'neg.csv'), errors='ignore') as f:
                 examples += [
-                    data.Example.fromlist([line, 'negative'], fields) for line in f]
-            with open(os.path.join(path, 'rt-polarity.pos'), errors='ignore') as f:
+                    data.Example.fromlist([line.split(',')[0], line.split(',')[1], 'negative'], fields) for line in f]
+            with open(os.path.join(path, 'pos.csv'), errors='ignore') as f:
                 examples += [
-                    data.Example.fromlist([line, 'positive'], fields) for line in f]
+                    data.Example.fromlist([line.split(',')[0], line.split(',')[1], 'positive'], fields) for line in f]
         super(MR, self).__init__(examples, fields, **kwargs)
 
     @classmethod
-    def splits(cls, text_field, label_field, dev_ratio=.1, shuffle=True, root='.', **kwargs):
+    def splits(cls, issue1_field, issue2_field, label_field, dev_ratio=.1, shuffle=True, root='.', **kwargs):
         """Create dataset objects for splits of the MR dataset.
-
         Arguments:
             text_field: The field that will be used for the sentence.
             label_field: The field that will be used for label data.
@@ -102,9 +102,9 @@ class MR(TarDataset):
                 Dataset.
         """
         path = cls.download_or_unzip(root)
-        examples = cls(text_field, label_field, path=path, **kwargs).examples
+        examples = cls(issue1_field, issue2_field, label_field, **kwargs).examples
         if shuffle: random.shuffle(examples)
         dev_index = -1 * int(dev_ratio*len(examples))
 
-        return (cls(text_field, label_field, examples=examples[:dev_index]),
-                cls(text_field, label_field, examples=examples[dev_index:]))
+        return (cls(issue1_field, issue2_field, label_field, examples=examples[:dev_index]),
+                cls(issue1_field, issue2_field, label_field, examples=examples[dev_index:]))

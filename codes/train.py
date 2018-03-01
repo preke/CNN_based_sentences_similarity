@@ -23,27 +23,41 @@ def train(train_iter, dev_iter, model, args):
     # epoch 是 训练的 round
     for epoch in range(1, args.epochs+1): 
         for batch in train_iter:
-            
-            print(len(batch)) # should be 64 
-            print(batch)
-            
             feature1, feature2, target = batch.issue1, batch.issue2, batch.label
             feature1.data.t_(), feature2.data.t_(), target.data.sub_(1)  # batch first, index align
             if args.cuda:
                 feature1, feature2, target = feature1.cuda(), feature2.cuda(), target.cuda()
 
             optimizer.zero_grad()
+            # print(type(feature1))
             logit = model(feature1, feature2)
-
+            target = target.type(torch.cuda.FloatTensor)
+            # print(target.data)
             #print('logit vector', logit.size())
             #print('target vector', target.size())
-            loss = nn.MSELoss(logit, target)
-            loss.backward()
+            criterion = nn.MSELoss()
+            loss_list = []
+            length = len(target.data)
+            for i in range(length):
+                a = logit.data[i]
+                b = target.data[i]
+                loss_list.append(0.5*(b-a)*(b-a))
+
+            # print(loss_list)
+            loss = autograd.Variable(torch.cuda.FloatTensor(loss_list), requires_grad=True)
+            loss.backward(torch.FloatTensor([[1, 1]]))
+            # loss = nn.MSELoss(logit, target)
+            # loss.backward()
             optimizer.step()
 
             steps += 1
             if steps % args.log_interval == 0:
-                corrects = (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
+                print('\n')
+                '''
+                corrects = 0 # (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
+                for item in loss_list:
+                    if item <= 0.125:
+                        corrects += 1
                 accuracy = 100.0 * corrects/batch.batch_size
                 sys.stdout.write(
                     '\rBatch[{}] - loss: {:.6f}  acc: {:.4f}%({}/{})'.format(steps, 
@@ -51,7 +65,10 @@ def train(train_iter, dev_iter, model, args):
                                                                              accuracy,
                                                                              corrects,
                                                                              batch.batch_size))
+                '''
             if steps % args.test_interval == 0:
+                pass
+                
                 dev_acc = eval(dev_iter, model, args)
                 if dev_acc > best_acc:
                     best_acc = dev_acc
@@ -61,7 +78,9 @@ def train(train_iter, dev_iter, model, args):
                 else:
                     if steps - last_step >= args.early_stop:
                         print('early stop by {} steps.'.format(args.early_stop))
+                
             elif steps % args.save_interval == 0:
+                print('save loss: %s' %str(loss.data))
                 save(model, args.save_dir, 'snapshot', steps)
 
 
