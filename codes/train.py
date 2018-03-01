@@ -53,7 +53,7 @@ def train(train_iter, dev_iter, model, args):
             steps += 1
             if steps % args.log_interval == 0:
                 print('\n')
-                '''
+                #
                 corrects = 0 # (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
                 for item in loss_list:
                     if item <= 0.125:
@@ -65,10 +65,10 @@ def train(train_iter, dev_iter, model, args):
                                                                              accuracy,
                                                                              corrects,
                                                                              batch.batch_size))
-                '''
+                #
             if steps % args.test_interval == 0:
                 pass
-                
+                '''#
                 dev_acc = eval(dev_iter, model, args)
                 if dev_acc > best_acc:
                     best_acc = dev_acc
@@ -78,7 +78,7 @@ def train(train_iter, dev_iter, model, args):
                 else:
                     if steps - last_step >= args.early_stop:
                         print('early stop by {} steps.'.format(args.early_stop))
-                
+                '''#
             elif steps % args.save_interval == 0:
                 print('save loss: %s' %str(loss.data))
                 save(model, args.save_dir, 'snapshot', steps)

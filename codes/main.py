@@ -49,7 +49,6 @@ if __name__ == '__main__':
     
     # get params
     args = get_args()    
-
     # load data
     # load_data('../datas/spark.csv')
     print("\nLoading data...")
