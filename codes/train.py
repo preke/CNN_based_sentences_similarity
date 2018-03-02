@@ -14,15 +14,24 @@ def train(train_iter, dev_iter, model, args):
     # model 就是 cnn
     # Adam 优化算法是随机梯度下降算法的扩展式
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-
+    torch.save(model, '1.pkl')
     steps = 0
     best_acc = 0
     last_step = 0
-    model.train()
-
+    # model.train()
+    
     # epoch 是 训练的 round
     for epoch in range(1, args.epochs+1): 
+        print('\nEpoch:%s\n'%epoch)
+        net_init = torch.load('1.pkl')
+        if net_init == model:
+            print('Same!')
+        torch.save(model, '1.pkl')
+        model.train()
         for batch in train_iter:
+            # print(cnt)
+            # cnt += 1
+            # continue
             feature1, feature2, target = batch.issue1, batch.issue2, batch.label
             feature1.data.t_(), feature2.data.t_(), target.data.sub_(1)  # batch first, index align
             if args.cuda:
@@ -31,31 +40,35 @@ def train(train_iter, dev_iter, model, args):
             optimizer.zero_grad()
             # print(type(feature1))
             logit = model(feature1, feature2)
+            # print(logit.data)
             target = target.type(torch.cuda.FloatTensor)
             # print(target.data)
-            #print('logit vector', logit.size())
-            #print('target vector', target.size())
+            # print('logit vector', logit.size())
+            # print('target vector', target.size())
             criterion = nn.MSELoss()
             loss_list = []
             length = len(target.data)
             for i in range(length):
                 a = logit.data[i]
                 b = target.data[i]
-                loss_list.append(0.5*(b-a)*(b-a))
+                loss_list.append(float(0.5*(b-a)*(b-a)))
 
             # print(loss_list)
-            loss = autograd.Variable(torch.cuda.FloatTensor(loss_list), requires_grad=True)
-            loss.backward(torch.FloatTensor([[1, 1]]))
-            # loss = nn.MSELoss(logit, target)
-            # loss.backward()
+            # loss = autograd.Variable(torch.cuda.FloatTensor(loss_list), requires_grad=True)
+            # loss.backward(torch.FloatTensor([64*[1]]))
+            loss = criterion(logit, target)
+            # print(loss.grad)
+            loss.backward()
             optimizer.step()
 
             steps += 1
             if steps % args.log_interval == 0:
-                print('\n')
-                #
+                # print('\n')
+                # corrects = (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
                 corrects = 0 # (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
                 for item in loss_list:
+                    # print(item)
+                    # print(type(item))
                     if item <= 0.125:
                         corrects += 1
                 accuracy = 100.0 * corrects/batch.batch_size
@@ -66,9 +79,9 @@ def train(train_iter, dev_iter, model, args):
                                                                              corrects,
                                                                              batch.batch_size))
                 #
-            if steps % args.test_interval == 0:
-                pass
-                '''#
+            if steps % 45 == 0:#args.test_interval == 0:
+                # pass
+                #
                 dev_acc = eval(dev_iter, model, args)
                 if dev_acc > best_acc:
                     best_acc = dev_acc
@@ -78,7 +91,7 @@ def train(train_iter, dev_iter, model, args):
                 else:
                     if steps - last_step >= args.early_stop:
                         print('early stop by {} steps.'.format(args.early_stop))
-                '''#
+                #
             elif steps % args.save_interval == 0:
                 print('save loss: %s' %str(loss.data))
                 save(model, args.save_dir, 'snapshot', steps)
@@ -93,25 +106,24 @@ def eval(data_iter, model, args):
         if args.cuda:
             feature1, feature2, target = feature1.cuda(), feature2.cuda(), target.cuda()
 
-        optimizer.zero_grad()
         logit = model(feature1, feature2)
-        loss = nn.MSELoss(logit, target)
-
-        # feature, target = batch.text, batch.label
-        # feature.data.t_(), target.data.sub_(1)  # batch first, index align
-        # if args.cuda:
-        #     feature, target = feature.cuda(), target.cuda()
-
-        # logit = model(feature)
-        # loss = F.cross_entropy(logit, target, size_average=False)
-
-        avg_loss += loss.data[0]
-        corrects += (torch.max(logit, 1)
-                     [1].view(target.size()).data == target.data).sum()
-
-    size = len(data_iter.dataset)
+        target = target.type(torch.cuda.FloatTensor)
+        criterion = nn.MSELoss()
+        loss_list = []
+        length = len(target.data)
+        for i in range(length):
+            a = logit.data[i]
+            b = target.data[i]
+            loss_list.append(float(0.5*(b-a)*(b-a)))
+        corrects = 0 # (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
+        for item in loss_list:
+            avg_loss += item 
+            if item <= 0.125:
+                 corrects += 1
+        accuracy = 100.0 * float(corrects)/batch.batch_size 
+    size = float(len(data_iter.dataset))
     avg_loss /= size
-    accuracy = 100.0 * corrects/size
+    accuracy = 100.0 * float(corrects)/size
     print('\nEvaluation - loss: {:.6f}  acc: {:.4f}%({}/{}) \n'.format(avg_loss, 
                                                                        accuracy, 
                                                                        corrects, 

@@ -13,7 +13,7 @@ import traceback
 import model
 import train
 
-
+if 1 == 1:
     parser = argparse.ArgumentParser(description='')
     # learning
     parser.add_argument('-lr', type=float, default=0.005, help='initial learning rate [default: 0.001]')
@@ -30,9 +30,9 @@ import train
     # model
     parser.add_argument('-dropout', type=float, default=0.5, help='the probability for dropout [default: 0.5]')
     parser.add_argument('-max-norm', type=float, default=3.0, help='l2 constraint of parameters [default: 3.0]')
-    parser.add_argument('-embed-dim', type=int, default=200, help='number of embedding dimension [default: 128]')
+    parser.add_argument('-embed-dim', type=int, default=300, help='number of embedding dimension [default: 128]')
     parser.add_argument('-kernel-num', type=int, default=100, help='number of each kind of kernel')
-    parser.add_argument('-kernel-sizes', type=str, default='3', help='comma-separated kernel size to use for convolution')
+    parser.add_argument('-kernel-sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
     parser.add_argument('-static', action='store_true', default=False, help='fix the embedding')
     # device
     parser.add_argument('-device', type=int, default=0, help='device to use for iterate data, -1 mean cpu [default: -1]')
@@ -42,7 +42,7 @@ import train
     parser.add_argument('-predict', type=str, default=None, help='predict the sentence given')
     parser.add_argument('-test', action='store_true', default=False, help='train or test')
     args = parser.parse_args()
-    print args
+    print(args)
     # get params    
     # load data
     # load_data('../datas/spark.csv')
@@ -54,17 +54,21 @@ import train
     issue1_field.build_vocab(train_data, dev_data)
     issue2_field.build_vocab(train_data, dev_data)
     label_field.build_vocab(train_data, dev_data)
+    print(len(train_data), len(dev_data), args.batch_size)
     train_iter, dev_iter = data.Iterator.splits(
                                 (train_data, dev_data), 
-                                batch_sizes=(args.batch_size, len(dev_data)))
-    
-
+                                batch_sizes=(args.batch_size, len(dev_data)),device=-1, repeat=False)
+    cnt = 0
+    for batch in train_iter:
+        print(cnt)
+        cnt += 1
+        continue
     args.embed_num = len(issue1_field.vocab) + len(issue2_field.vocab)
     args.class_num = len(label_field.vocab) - 1
     args.cuda = (not args.no_cuda) and torch.cuda.is_available(); del args.no_cuda
     args.kernel_sizes = [int(k) for k in args.kernel_sizes.split(',')]
     args.save_dir = os.path.join(args.save_dir, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-
+    
     print("\nParameters:")
     for attr, value in sorted(args.__dict__.items()):
         print("\t{}={}".format(attr.upper(), value))

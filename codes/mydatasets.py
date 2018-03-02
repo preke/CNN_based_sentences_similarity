@@ -38,7 +38,7 @@ class MR(TarDataset):
 
     @staticmethod
     def sort_key(ex):
-        return len(ex.text)
+        return len(ex.issue1)
 
     def __init__(self, issue1_field, issue2_field, label_field, path=None, examples=None, **kwargs):
         """Create an MR dataset instance given a path and fields.

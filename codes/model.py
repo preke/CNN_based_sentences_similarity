@@ -20,8 +20,8 @@ class CNN_Text(nn.Module):
         self.embed = nn.Embedding(V, D)
         # self.convs1 = [nn.Conv2d(Ci, Co, (K, D)) for K in Ks]
         self.convs1 = nn.ModuleList([nn.Conv2d(Ci, Co, (K, D)) for K in Ks])
-        self.dropout = nn.Dropout(args.dropout)
-        self.fc1 = nn.Linear(len(Ks)*Co, C)
+        self.dropout = nn.Dropout(args.dropout, self.training)
+        self.fc1 = nn.Linear(1, 1)
 
     # def conv_and_pool(self, x, conv):
     #     x = F.relu(conv(x)).squeeze(3)  # (N, Co, W)
@@ -50,7 +50,7 @@ class CNN_Text(nn.Module):
         q1 = q1.unsqueeze(1)  # (N, Ci, W, D)
         
         # step1
-        q1 = [F.relu(conv(q1)).squeeze(3) for conv in self.convs1]  # [(N, Co, W), ...]*len(Ks)
+        q1 = [F.tanh(conv(q1)).squeeze(3) for conv in self.convs1]  # [(N, Co, W), ...]*len(Ks)
         # step2
         q1 = [i.size(2) * F.avg_pool1d(i, i.size(2)).squeeze(2) for i in q1]  # [(N, Co), ...]*len(Ks)
         q1 = [F.tanh(i) for i in q1]
@@ -63,15 +63,26 @@ class CNN_Text(nn.Module):
         if self.args.static:
             q2 = Variable(q2)
         q2 = q2.unsqueeze(1)  # (N, Ci, W, D)
-        q2 = [F.relu(conv(q2)).squeeze(3) for conv in self.convs1]  # [(N, Co, W), ...]*len(Ks)
+        
+        q2 = [F.tanh(conv(q2)).squeeze(3) for conv in self.convs1]  # [(N, Co, W), ...]*len(Ks)
         q2 = [i.size(2) * F.avg_pool1d(i, i.size(2)).squeeze(2) for i in q2]  # [(N, Co), ...]*len(Ks)
+        q2 = [F.tanh(i) for i in q2]
         q2 = torch.cat(q2, 1)
         # q2 = self.dropout(q2)  # (N, len(Ks)*Co)
         # logit_2 = self.fc1(q2)  # (N, C)
+        '''
         cos_ans = []
         length = len(q1.data)
         for i in range(length):
            cos_ans.append(self.Cosine_simlarity(q1.data[i], q2.data[i]))
         # print(cos_ans)
-        return Variable(torch.cuda.FloatTensor(cos_ans), requires_grad = True)
-
+        
+        cos_ans = Variable(torch.cuda.FloatTensor(cos_ans), requires_grad = True)
+        print(cos_ans.data)
+        cos_ans = self.fc1(cos_ans)
+        '''
+        cos_ans = F.cosine_similarity(q1, q2)
+        # cos_ans = nn.functional.pairwise_distance(q1, q2, p=2, eps=1e-06)
+        # cos_ans = F.relu(cos_ans)
+        # print(cos_ans.data)
+        return cos_ans
