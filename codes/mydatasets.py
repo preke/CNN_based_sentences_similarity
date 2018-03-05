@@ -106,5 +106,6 @@ class MR(TarDataset):
         if shuffle: random.shuffle(examples)
         dev_index = -1 * int(dev_ratio*len(examples))
 
-        return (cls(issue1_field, issue2_field, label_field, examples=examples[:dev_index]),
-                cls(issue1_field, issue2_field, label_field, examples=examples[dev_index:]))
+        return (cls(issue1_field, issue2_field, label_field, examples=examples[:int(0.7*len(examples))]),
+               cls(issue1_field, issue2_field, label_field, examples=examples[int(0.7*len(examples)):int(0.8*len(examples))]),
+                cls(issue1_field, issue2_field, label_field, examples=examples[int(0.8*len(examples)):]))
