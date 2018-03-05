@@ -130,6 +130,49 @@ def eval(data_iter, model, args):
                                                                        size))
     return accuracy
 
+def eval_test(data_iter, model, args):
+    model.eval()
+    corrects, avg_loss = 0, 0
+    for batch in data_iter:
+        feature1, feature2, target = batch.issue1, batch.issue2, batch.label
+        feature1.data.t_(), feature2.data.t_(), target.data.sub_(1)  # batch first, index align
+        if args.cuda:
+            feature1, feature2, target = feature1.cuda(), feature2.cuda(), target.cuda()
+
+        logit = model(feature1, feature2)
+        target = target.type(torch.cuda.FloatTensor)
+        criterion = nn.MSELoss()
+        loss_list = []
+        length = len(target.data)
+        f1_fenmu = 0
+        f1_tp = 0
+        for i in range(length):
+            a = logit.data[i]
+            b = target.data[i]
+            if a >= 0.5:
+                f1_fenmu += 1
+                if b == 1:
+                    f1_tp += 1
+            loss_list.append(float(0.5*(b-a)*(b-a)))
+        corrects = 0 # (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
+        # f1
+        
+ 
+        print('f1:%f\n', %(float(f1_tp)/float(f1_fenmu))
+        
+        for item in loss_list:
+            avg_loss += item 
+            if item <= 0.125:
+                 corrects += 1
+        accuracy = 100.0 * float(corrects)/batch.batch_size 
+    size = float(len(data_iter.dataset))
+    avg_loss /= size
+    accuracy = 100.0 * float(corrects)/size
+    print('\nEvaluation - loss: {:.6f}  acc: {:.4f}%({}/{}) \n'.format(avg_loss, 
+                                                                       accuracy, 
+                                                                       corrects, 
+                                                                       size))
+    return accuracy
 
 def predict(text, model, text_field, label_feild, cuda_flag):
     assert isinstance(text, str)
