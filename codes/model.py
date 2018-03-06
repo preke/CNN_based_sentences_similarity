@@ -44,7 +44,13 @@ class CNN_Text(nn.Module):
 
     def forward(self, q1, q2):
 
+        # q1 = self.embed(q1)
+        # print(len(q1))
+        # for i in q1:
+        #     print(i)
         q1 = self.embed(q1)
+        # print(q1.data.shape)
+        # q1.data = q1.data.weight.data.copy_(torch.from_numpy(pretrained_weight))
         if self.args.static:
             q1 = Variable(q1)
         q1 = q1.unsqueeze(1)  # (N, Ci, W, D)
@@ -60,6 +66,7 @@ class CNN_Text(nn.Module):
         # logit_1 = self.fc1(q1)  # (N, C)
 
         q2 = self.embed(q2)
+        # q2.data = q2.data.weight.data.copy_(torch.from_numpy(pretrained_weight))
         if self.args.static:
             q2 = Variable(q2)
         q2 = q2.unsqueeze(1)  # (N, Ci, W, D)

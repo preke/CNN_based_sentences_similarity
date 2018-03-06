@@ -76,7 +76,7 @@ class MR(TarDataset):
         fields = [('issue1', issue1_field), ('issue2', issue2_field), ('label', label_field)]
 
         if examples is None:
-            path = '../datas/'
+            path = '../hdfs/'
             examples = []
             with open(os.path.join(path, 'neg.csv'), errors='ignore') as f:
                 examples += [

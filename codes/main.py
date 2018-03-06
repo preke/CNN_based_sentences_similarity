@@ -42,19 +42,23 @@ if 1 == 1:
     parser.add_argument('-predict', type=str, default=None, help='predict the sentence given')
     parser.add_argument('-test', action='store_true', default=False, help='train or test')
     args = parser.parse_args()
-    print(args)
+    # print(args)
     # get params    
     # load data
-    load_data('../datas/spark.csv')
+    load_data('../datas/hdfs.csv')
+    
+    '''
+    '''
     print("\nLoading data...")
     issue1_field = data.Field(lower=True)
     issue2_field = data.Field(lower=True)
     label_field = data.Field(sequential=False)
     train_data, dev_data, test_data = mydatasets.MR.splits(issue1_field, issue2_field, label_field)
+    
     issue1_field.build_vocab(train_data, dev_data, test_data)
     issue2_field.build_vocab(train_data, dev_data, test_data)
     label_field.build_vocab(train_data, dev_data, test_data)
-    # print(len(train_data), len(dev_data), args.batch_size)
+    print(len(train_data), len(dev_data), args.batch_size)
     train_iter, dev_iter, test_iter = data.Iterator.splits(
                                 (train_data, dev_data, test_data), 
                                 batch_sizes=(args.batch_size, len(dev_data), len(test_data)),device=-1, repeat=False)
@@ -72,8 +76,7 @@ if 1 == 1:
     print("\nParameters:")
     for attr, value in sorted(args.__dict__.items()):
         print("\t{}={}".format(attr.upper(), value))
-
-
+    
     # model
     cnn = model.CNN_Text(args)
     if args.snapshot is not None:
@@ -83,21 +86,24 @@ if 1 == 1:
     if args.cuda:
         torch.cuda.set_device(args.device)
         cnn = cnn.cuda()
-    '''
+    #'''
+    
     try:
         train.train(train_iter, dev_iter, cnn, args)
     except KeyboardInterrupt:
         print(traceback.print_exc())
         print('\n' + '-' * 89)
         print('Exiting from training early')
-    '''
+    #'''
+    
     try:
-        train.eval(test_iter, cnn, args) 
+        train.eval_test(test_iter, cnn, args) 
     except:
         print('test_wrong')
-    '''
+    
     # train or predict
     
+    '''
     if args.predict is not None:
         label = train.predict(args.predict, cnn, text_field, label_field, args.cuda)
         print('\n[Text]  {}\n[Label] {}\n'.format(args.predict, label))
@@ -115,7 +121,7 @@ if 1 == 1:
             print('Exiting from training early')
     
     '''
-
+    
     
     
 

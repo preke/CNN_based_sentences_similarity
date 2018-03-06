@@ -38,7 +38,8 @@ def train(train_iter, dev_iter, model, args):
                 feature1, feature2, target = feature1.cuda(), feature2.cuda(), target.cuda()
 
             optimizer.zero_grad()
-            # print(type(feature1))
+            # print(feature1.data)
+            
             logit = model(feature1, feature2)
             # print(logit.data)
             target = target.type(torch.cuda.FloatTensor)
@@ -79,7 +80,7 @@ def train(train_iter, dev_iter, model, args):
                                                                              corrects,
                                                                              batch.batch_size))
                 #
-            if steps % 45 == 0:#args.test_interval == 0:
+            if steps % 45 == 0:#rgs.test_interval == 0:
                 # pass
                 #
                 dev_acc = eval(dev_iter, model, args)
@@ -158,7 +159,7 @@ def eval_test(data_iter, model, args):
         # f1
         
  
-        print('f1:%f\n', %(float(f1_tp)/float(f1_fenmu))
+        print('f1:{:.6f}\n'.format(float(f1_tp)/float(f1_fenmu)))
         
         for item in loss_list:
             avg_loss += item 
