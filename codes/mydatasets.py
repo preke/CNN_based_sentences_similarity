@@ -40,7 +40,7 @@ class MR(TarDataset):
     def sort_key(ex):
         return len(ex.issue1)
 
-    def __init__(self, issue1_field, issue2_field, label_field, path=None, examples=None, **kwargs):
+    def __init__(self, issue1_field, issue2_field, label_field, pairid_field, path=None, examples=None, **kwargs):
         """Create an MR dataset instance given a path and fields.
 
         Arguments:
@@ -73,21 +73,41 @@ class MR(TarDataset):
 
         issue1_field.preprocessing = data.Pipeline(clean_str)
         issue2_field.preprocessing = data.Pipeline(clean_str)
-        fields = [('issue1', issue1_field), ('issue2', issue2_field), ('label', label_field)]
+        fields = [('issue1', issue1_field), ('issue2', issue2_field), ('label', label_field), ('pairid', pairid_field)]
 
         if examples is None:
-            path = '../hdfs/'
+            path = 'models/'
+            # path = '../hadoop/'
             examples = []
-            with open(os.path.join(path, 'neg.csv'), errors='ignore') as f:
-                examples += [
-                    data.Example.fromlist([line.split(',')[0], line.split(',')[1], 'negative'], fields) for line in f]
+            count = 0
+            '''with open(os.path.join(path, 'neg.csv'), errors='ignore') as f:
+                for line in f:
+                    examples.append(data.Example.fromlist([line.split(',')[0], line.split(',')[1], 'negative', str(count)], fields))
+                    count += 1
             with open(os.path.join(path, 'pos.csv'), errors='ignore') as f:
-                examples += [
-                    data.Example.fromlist([line.split(',')[0], line.split(',')[1], 'positive'], fields) for line in f]
+                for line in f:
+                    examples.append(data.Example.fromlist([line.split(',')[0], line.split(',')[1], 'positive', str(count)], fields))
+                    count += 1
+            '''
+            with open(os.path.join(path, 'cnn_train_new.csv'), errors='ignore') as f:
+                 for line in f:
+                    if count == 0:
+                        count += 1
+                        continue
+                    
+                    examples.append(data.Example.fromlist([line.split(',')[1], line.split(',')[2], line.split(',')[3], str(count)], fields))
+                    count += 1
+                    '''if (line.split(',')[1] != '') & (line.split(',')[2] != ''):
+                        examples.append(data.Example.fromlist([line.split(',')[1], line.split(',')[2], line.split(',')[3], str(count)], fields))
+                        count += 1
+                    else:
+                        print(line)'''
+            print(count)
+            print('-----------------------------------------------------------------')
         super(MR, self).__init__(examples, fields, **kwargs)
 
     @classmethod
-    def splits(cls, issue1_field, issue2_field, label_field, dev_ratio=.1, shuffle=True, root='.', **kwargs):
+    def splits(cls, issue1_field, issue2_field, label_field, pairid_field, dev_ratio=.1, shuffle=True, root='.', **kwargs):
         """Create dataset objects for splits of the MR dataset.
         Arguments:
             text_field: The field that will be used for the sentence.
@@ -102,10 +122,14 @@ class MR(TarDataset):
                 Dataset.
         """
         path = cls.download_or_unzip(root)
-        examples = cls(issue1_field, issue2_field, label_field, **kwargs).examples
-        if shuffle: random.shuffle(examples)
+        examples = cls(issue1_field, issue2_field, label_field, pairid_field, **kwargs).examples
+        # for i in examples:
+        #     print(i.data)
+        if shuffle: 
+            print('=========================================================================================================================================Shuffle')
+        #    random.shuffle(examples)
         dev_index = -1 * int(dev_ratio*len(examples))
 
-        return (cls(issue1_field, issue2_field, label_field, examples=examples[:int(0.7*len(examples))]),
-               cls(issue1_field, issue2_field, label_field, examples=examples[int(0.7*len(examples)):int(0.8*len(examples))]),
-                cls(issue1_field, issue2_field, label_field, examples=examples[int(0.8*len(examples)):]))
+        return (cls(issue1_field, issue2_field, label_field, pairid_field, examples=examples[:int(0.9*len(examples))]),
+               cls(issue1_field, issue2_field, label_field, pairid_field, examples=examples[int(0.9*len(examples)):]),
+                cls(issue1_field, issue2_field, label_field, pairid_field, examples=examples))

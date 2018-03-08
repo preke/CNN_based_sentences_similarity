@@ -1,4 +1,3 @@
-# coding = utf-8
 import os
 import pandas as pd
 import numpy as np
@@ -9,16 +8,8 @@ import random
 import tarfile
 import urllib
 from torchtext import data
-from datetime import datetime
 
-def times_window(t1, t2):
-    t1 = pd.to_datetime(t1)
-    t2 = pd.to_datetime(t2)
-    delta = t2 - t1 if t2 > t1 else t1 - t2
-    if delta.days < 90:
-        return 1
-    else:
-        return 0
+
 
 def load_data(data_path):
     #
@@ -40,7 +31,7 @@ def load_data(data_path):
         for dup in r['dup_list']:
             # print(dup)
             if int(r['Issue_id'].split('-')[1]) < int(dup.split('-')[1]):
-                if dup.startswith('MAP'):
+                if dup.startswith('HAD'):
                     Dup_list.append([r['Issue_id'], dup, r['Resolution']])
     df_pairs_pos = pd.DataFrame(Dup_list, columns = ['Issue_id_1', 'Issue_id_2', 'Resolution'])
 
@@ -51,7 +42,7 @@ def load_data(data_path):
         if r['Duplicate_null'] == True:
             j = 1
             try:
-                while not df.ix[i+j]['Issue_id'].startswith('MAP'):
+                while not df.ix[i+j]['Issue_id'].startswith('HAD'):
                     j += 1
                 neg_dup_list.append([r['Issue_id'], df.ix[i+j]['Issue_id'], r['Resolution']])
                 cnt += 1
@@ -69,19 +60,9 @@ def load_data(data_path):
     df_pairs_pos['Title_1'] = df_pairs_pos['Issue_id_1'].apply(lambda x: list(df[df['Issue_id'] == x]['Title'])[0])
     df_pairs_pos['Title_2'] = df_pairs_pos['Issue_id_2'].apply(lambda x: list(df[df['Issue_id'] == x]['Title'])[0] if len(list(df[df['Issue_id'] == x]['Title'])) > 0 else '')
     # df_pairs_pos['Title_2'] = df_pairs_pos['Issue_id_2'].apply(lambda x: list(df[df['Issue_id'] == x]['Title'])[0])
-    
-    df_pairs_pos['same_comp'] = df_pairs_pos.apply(lambda r: 1 if list(df[df['Issue_id'] == r['Issue_id_1']]['Component']) == list(df[df['Issue_id'] == r['Issue_id_2']]['Component']) else 0, axis = 1)
-    df_pairs_neg['same_comp'] = df_pairs_neg.apply(lambda r: 1 if list(df[df['Issue_id'] == r['Issue_id_1']]['Component']) == list(df[df['Issue_id'] == r['Issue_id_2']]['Component']) else 0, axis = 1)
-
-    df_pairs_pos['same_prio'] = df_pairs_pos.apply(lambda r: 1 if list(df[df['Issue_id'] == r['Issue_id_1']]['Priority']) == list(df[df['Issue_id'] == r['Issue_id_2']]['Priority']) else 0, axis = 1)
-    df_pairs_neg['same_prio'] = df_pairs_neg.apply(lambda r: 1 if list(df[df['Issue_id'] == r['Issue_id_1']]['Priority']) == list(df[df['Issue_id'] == r['Issue_id_2']]['Priority']) else 0, axis = 1)
-
-    df_pairs_pos['same_tw'] = df_pairs_pos.apply(lambda r: times_window(list(df[df['Issue_id'] == r['Issue_id_1']]['Created_time'])[0], list(df[df['Issue_id'] == r['Issue_id_1']]['Created_time'])[0]),axis = 1)
-    df_pairs_neg['same_tw'] = df_pairs_neg.apply(lambda r: times_window(list(df[df['Issue_id'] == r['Issue_id_1']]['Created_time'])[0], list(df[df['Issue_id'] == r['Issue_id_1']]['Created_time'])[0]),axis = 1)
-    '''
     df_pairs_pos = df_pairs_pos[['Title_1','Title_2']]  
     df_pairs_neg = df_pairs_neg[['Title_1','Title_2']]  
-    
+    '''
     '''
     df_pairs_neg['Title_1'].apply(lambda x: str(' '.join(x)))
     df_pairs_neg['Title_2'].apply(lambda x: str(' '.join(x)))
@@ -89,8 +70,8 @@ def load_data(data_path):
     df_pairs_pos['Title_2'].apply(lambda x: str(' '.join(x)))
     '''
     '''
-    df_pairs_neg.to_csv('../../lr/mapreduce/neg.csv', )#index=False, header=False)
-    df_pairs_pos.to_csv('../../lr/mapreduce/pos.csv', )#index=False, header=False)
+    df_pairs_neg.to_csv('../datas/neg.csv', index=False, header=False)
+    df_pairs_pos.to_csv('../datas/pos.csv', index=False, header=False)
     '''
     '''
     ratios = [0.6, 0.3, 0.1]
@@ -100,4 +81,4 @@ def load_data(data_path):
     return train_set, test_set, vali_set
 
 if __name__ == '__main__':
-     load_data('../mapreduce/mapreduce.csv')    
+    load_data('../hadoop/hadoop.csv')
