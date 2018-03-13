@@ -95,7 +95,10 @@ def load_data(data_path, prefix):
 
     df_pairs_pos_simple = df_pairs_pos[['Title_1','Title_2']]  
     df_pairs_neg_simple = df_pairs_neg[['Title_1','Title_2']]  
-    
+
+    df_pairs_neg_simple.to_csv('../datas/neg.csv', index=False, header=False)
+    df_pairs_pos_simple.to_csv('../datas/pos.csv', index=False, header=False)
+
     df_pairs_simple = shuffle(pd.concat([df_pairs_pos_simple, df_pairs_neg_simple]))
     df_pairs_simple.head(int(ratio*len(df_pairs_simple))).to_csv('../datas/train_set.csv', index=False, header=False)
     df_pairs_simple.tail(int((1-ratio)*len(df_pairs_simple))).to_csv('../datas/test_set.csv', index=False, header=False)
