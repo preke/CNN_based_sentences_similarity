@@ -117,7 +117,7 @@ tp     = 0
 pred_p = 0
 real_p = 0
 
-with open('/datas/spark_cnn_test.csv') as f:
+with open('/datas/cnn_test.csv') as f:
     for line in f.readlines():
         if count == 0:
             count += 1
